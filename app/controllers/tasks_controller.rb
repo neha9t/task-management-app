@@ -1,20 +1,19 @@
 class TasksController < ApplicationController
-
+  # TODO - And we will do some LIKE queries and benchmark which is faster.
   def index
-    return render json: [] unless Task.all.order(id: :desc)
-
-    task = authored?
-    # task = task.send(date_params) if date_params
-    # puts date_params.inspect
-    # puts task.inspect
-    render json: task
+    if params[:user_id]
+      render json: Task.author(params[:user_id])
+    elsif params[:created_after]
+      render json: Task.tasks_after_date(params[:created_after])
+    else
+      render json: Task.all
+    end
   end
 
-  # Check good practice, whether to return created record in create/update or {sucess: true}
   def create
     task = Task.create(task_params)
     return render json: {errors: task.errors.messages}, status: 400 unless task.valid?
-    render json: {success: true}
+    render json: task
   end
 
   def show
@@ -24,7 +23,7 @@ class TasksController < ApplicationController
   def update
     task = Task.find(params[:id])
     task.update(task_params)
-    return render json: {errors: task.errors.messages}  unless task.valid?
+    return render json: {errors: task.errors.messages}, status: 400  unless task.valid?
     render json: {success: true}
   end
 
