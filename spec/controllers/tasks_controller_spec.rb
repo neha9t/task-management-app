@@ -1,9 +1,19 @@
 require "rails_helper"
 require 'pry'
 
+def verify_task(task)
+  expect(task.keys).to contain_exactly("id","name", "description", "end_date_on", "created_at",
+                                       "updated_at", "user_id")
+  expect(task["created_at"]).to be_truthy
+  expect(task["updated_at"]).to be_truthy
+  expect(task["id"]).to be_truthy
+  expect(task["name"]).to eq("N1")
+  expect(task["description"]).to eq("D1")
+  expect(task["end_date_on"]).to eq("2017-02-25")
+  expect(task["user_id"]).to eq(1)
+end
 
-
-describe TasksController do
+Rspec.describe TasksController, :type => :controller do
   describe "POST #create" do
     context 'with invalid attributes' do
       before(:each) do
@@ -18,7 +28,6 @@ describe TasksController do
 
       it "responds with error message" do
         body = JSON.parse(response.body)
-        puts body
         expect(body["errors"]["name"]).to match_array(["can't be blank"])
         expect(body["errors"]["user_id"]).to match_array(["can't be blank", "is not a number"])
       end
@@ -29,40 +38,27 @@ describe TasksController do
         @request.env["CONTENT_TYPE"] = "application/json"
         post :create , params: {name: "Neha T", description: "description", end_date_on: "!@#{}", user_id: 1}
         body = JSON.parse(response.body)
-        puts body
         expect(body["errors"]["end_date_on"]).to match_array(["is not a valid date"])
         expect(response.code).to eql("400")
-        #   # expect(response.code).to eql("200")
-        #   #body = JSON.parse(response.body)
-        #   expect(body.keys).to contain_exactly("id","name", "description", "end_date_on", "created_at", "updated_at", "user_id")
-        #   # TODO - Write tests to match exact value of known fields.
-        #   expect(body["created_at"]).to be_truthy
-        #   expect(body["updated_at"]).to be_truthy
-        #   expect(body["id"]).to be_truthy
-        # end
       end
     end
-
 
     context 'when valid' do
       it "responds with 200 HTTP code" do
         @request.env["CONTENT_TYPE"] = "application/json"
-        post :create , params: {name: "Neha T", description: "description", end_date_on: "2017-02-23", user_id: 1}
+        post :create , params: {name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1}
         expect(response.code).to eql("200")
         body = JSON.parse(response.body)
-        expect(body.keys).to contain_exactly("id","name", "description", "end_date_on", "created_at",
-                                             "updated_at", "user_id")
-        # TODO - Write tests to match exact value of known fields.
-        expect(body["created_at"]).to be_truthy
-        expect(body["updated_at"]).to be_truthy
-        expect(body["id"]).to be_truthy
+        verify_task(body)
       end
     end
   end
 
   describe "GET #index" do
-    context "no values" do
+    context "when has valid array" do
       before(:each) do
+        Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
+        Task.create(name: "N2", description: "D2", end_date_on: "2017-02-21", user_id: 2)
         get :index
       end
 
@@ -70,33 +66,41 @@ describe TasksController do
         expect(response.code).to eql("200")
       end
 
-      # it "responds with array of tasks" do
-      #   expect(assigns(:tasks)).to match_array @task
-      #   # expect(response).to have_http_status(400)
-      # end
+      it "should return 2 tasks" do
+        body = JSON.parse(response.body)
+        expect(body.length).to eql(2)
+        verify_task(body[0])
+      end
     end
 
-    context "should return values" do
+    context "when applied author filter on tasks" do
       before(:each) do
-        Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25")
-        Task.create(name: "N2", description: "D2", end_date_on: "2017-02-21")
-        get :index
+        Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
+        Task.create(name: "N2", description: "D2", end_date_on: "2017-02-21", user_id: 2)
+        Task.create(name: "N2", description: "D2", end_date_on: "2017-02-21", user_id: 2)
+        get :index, params: {user_id: 2}
       end
-
-      it "responds with 200 HTTP Code" do
-        expect(response.code).to eql("200")
+      it "returns values with same user_id" do
+        body = JSON.parse(response.body)
+        expect(body.length).to eq(2)
+        expect(body[0]["user_id"]).to eq(2)
+        expect(body[1]["user_id"]).to eq(2)
       end
-
-      it "should return two tasks" do
-        expect(JSON.parse(response.body).length).to eql(2)
-        # TODO - Do same checks as post, encapsulate within a function.
-      end
-
-      # it "responds with array of tasks" do
-      #   expect(assigns(:tasks)).to match_array @task
-      #   # expect(response).to have_http_status(400)
-      # end
     end
+
+    context "when applied created_after a given date filter on tasks" do
+      before(:each) do
+        Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
+        Task.create(name: "N2", description: "D2", end_date_on: "2017-02-21", user_id: 2)
+        Task.create(name: "N2", description: "D2", end_date_on: "2017-02-21", user_id: 2)
+        get :index, params: {created_after: Date.today + 1.day}
+      end
+      it "should return 0 task" do
+        body = JSON.parse(response.body)
+        expect(body.length).to eql(0)
+      end
+    end
+    # TODO - Add third Filter Test cases
   end
 
   describe "GET #show" do
@@ -116,52 +120,70 @@ describe TasksController do
 
     context 'with valid id' do
       before(:each) do
-        Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25")
+        Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
         get :show, params: { id: 1 }
       end
 
       it "responds with 200 HTTP Code" do
-        puts response.body
+        body = JSON.parse(response.body)
         expect(response.code).to eql("200")
+        verify_task(body)
         # TODO - Response structure
       end
     end
   end
 
   describe "PUT #update" do
-    context "with valid attributes" do
+    context "with invalid attributes" do
       before(:each) do
-        put :update , params: {}
+        Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
+
+      end
+      it "responds with error message" do
+        @request.env["CONTENT_TYPE"] = "application/json"
+        put :update , params: {id: 1, name: "",description: "D1", end_date_on: "wqw", user_id: ""}
+        body = JSON.parse(response.body)
+        expect(response.code).to eql("400")
+        expect(body["errors"]["end_date_on"]).to match_array(["is not a valid date"])
+        expect(body["errors"]["user_id"]).to match_array(["can't be blank", "is not a number"])
+        expect(body["errors"]["name"]).to match_array(["can't be blank"])
       end
     end
 
+    context "with changed valid attributes" do
+      before(:each) do
+        @task = Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
+      end
+      it "responds with 200 OK" do
+        @request.env["CONTENT_TYPE"] = "application/json"
+        params = {id: 1 ,name: "Change N1",description: "D1", end_date_on: "2017-02-03", user_id: 1}
+        put :update , params: params
+        @task.reload
+        body = JSON.parse(response.body)
+        puts body
+        expect(response.code).to eql("200")
+        expect(@task.name).to eql("Change N1")
+      end
+    end
+  end
+
+  describe "DELETE #destroy" do
+    context "with valid attributes" do
+      it "responds with 200 status code" do
+        @task = Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
+        delete :destroy , params: {id: @task.id}
+        body = JSON.parse(response.body)
+        puts body
+        expect(response.code).to eql("200")
+      end
+    end
+    context "with ID which is already deleted" do
+      it "responds with 404 and error message once deleted" do
+        delete :destroy , params: {id: 1}
+        body = JSON.parse(response.body)
+        expect(body["error"]).to eql("record not found")
+        expect(response.code).to eql("404")
+      end
+    end
   end
 end
-
-
-# context 'when valid' do
-#   it "responds successfully with an HTTP 200 status code" do
-#     @request.env["CONTENT_TYPE"] = "application/json"
-#     post :create, params: {name: "NEHA", description: "QWRTW", end_date_on: "2017-02-23"}
-#     expect(response).to have_http_status(200)
-#     body = JSON.parse(response.body)
-#     expect(body.keys).to contain_exactly("id","name", "description", "end_date_on", "created_at", "updated_at")
-#     # TODO - Write tests to match exact value of known fields.
-#     expect(body["created_at"]).to be_truthy
-#     expect(body["updated_at"]).to be_truthy
-#     expect(body["id"]).to be_truthy
-#   end
-# end
-# it "renders the index template" do
-#   get :index
-#   expect(response).to render_template("index")
-# end
-
-#it : aparams :  nhe posts:to @posts"do
-#   :t1, post2 = Post.create!, Post.create!
-#   get :index
-
-#   expect(assigns(:posts)).to match_array([post1, post2])
-# # end
-# end
-# end
