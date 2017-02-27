@@ -1,0 +1,46 @@
+inherit_from: .rubocop_todo.yml
+
+Rails:
+  Enabled: true
+
+AllCops:
+  Exclude:
+    - db/**/*
+    - bin/*
+    - 'vendor/**/*'
+
+Documentation:
+  Enabled: false
+
+DotPosition:
+  EnforcedStyle: trailing
+
+Style/EmptyLinesAroundBlockBody:
+  Enabled: true
+
+Style/EmptyLinesAroundModuleBody:
+  Enabled: true
+
+Style/EmptyLinesAroundClassBody:
+  Enabled: true
+
+Style/EmptyLinesAroundMethodBody:
+  Enabled: true
+
+Metrics/LineLength:
+  Max: 100
+
+Metrics/ClassLength:
+  Max: 120
+
+Style/IndentationConsistency:
+  EnforcedStyle: rails
+
+Style/Documentation:
+  Enabled: false
+
+StringLiterals:
+  Enabled: false
+
+FrozenStringLiteralComment:
+  Enabled: false
