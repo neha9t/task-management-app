@@ -1,57 +1,78 @@
 class TasksController < ApplicationController
-  # TODO - And we will do some LIKE queries and benchmark which is faster.
+  # TODO: And we will do some LIKE queries and benchmark which is faster.
+
+  resource_description do
+    short "APIs for managing Tasks"
+    formats [:json]
+    error 400, "Bad Request"
+    error 404, "Not Found"
+    error 500, "Internal Server Error"
+    meta :author => {:name => 'Neha', :surname => 'Tandon'}
+  end
+
+  def_param_group :task do
+    param :task, Hash,:action_aware => true, :desc => "Task information" do
+      param :name, String,:desc => "Name of Task", :required => true, :allow_nil => false
+      param :description, String, desc: "Description of task", required: false
+      param :end_date_on, String,desc: "Date saved as String", :allow_nil => true
+      param :user_id, Numeric ,required: true, :allow_nil => false
+    end
+  end
+
+  api!
+
   def index
     if params[:user_id]
       render json: Task.author(params[:user_id])
     elsif params[:created_after]
       render json: Task.tasks_after_date(params[:created_after])
+    elsif params[:search]
+      render json: Task.search(params[:search])
     else
       render json: Task.all
     end
   end
 
+
+  api!
+  param_group :task, :as => :create
+
   def create
     task = Task.create(task_params)
-    return render json: {errors: task.errors.messages}, status: 400 unless task.valid?
+    return render json: { errors: task.errors.messages }, status: 400 unless task.valid?
     render json: task
   end
 
+  # api :GET, '/tasks/:id', "Shows a single task"
+  # param :id, :numeric
+  # formats ['json']
+  api!
   def show
-    render json: Task.find(params[:id])
+    render json: set_task
   end
+
+  api :PUT, "/tasks/:id", "Update a task"
+  param_group :task, :as => :update
 
   def update
-    task = Task.find(params[:id])
-    task.update(task_params)
-    return render json: {errors: task.errors.messages}, status: 400  unless task.valid?
-    render json: {success: true}
+    set_task.update(task_params)
+    return render json: { errors: task.errors.messages }, status: 400 unless task.valid?
+    render json: { success: true }
   end
 
+  api!
   def destroy
-    render json: {success: "true"} if Task.find(params[:id]).destroy
+    render json: { success: true } if set_task.destroy
   end
 
   private
 
+  def set_task
+    task = Task.find(params[:id])
+  end
+
   def task_params
-    # TODO - Think about what would happen if task key was not created automatically.
+    # TODO: Think about what would happen if task key was not created automatically.
     params.require(:task).permit(:name, :description, :end_date_on, :user_id)
   end
-
-  def user_params
-    y = %w(author).include?(params[:user_id]) ? params[:user_id].to_sym : nil
-    puts "user params" + y
-    y
-  end
-
-  def date_params
-    x = %w(tasks_after_date).include?(params[:created_after]) ? params[:created_after].to_sym : nil
-    puts x
-    x
-  end
-
-  def authored_tasks
-    Task.where(user_id: user_id).order('tasks.created_at descs')
-  end
-
 end
