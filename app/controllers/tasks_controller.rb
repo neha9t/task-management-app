@@ -1,8 +1,8 @@
 class TasksController < ApplicationController
-  # TODO: And we will do some LIKE queries and benchmark which is faster.
 
   resource_description do
     short "APIs for managing Tasks"
+    description "APIs for managing Tasks"
     formats [:json]
     error 400, "Bad Request"
     error 404, "Not Found"
@@ -11,16 +11,18 @@ class TasksController < ApplicationController
   end
 
   def_param_group :task do
-    param :task, Hash, action_aware: true, desc: "Task information" do
-      param :name, String, :desc => "Name of Task", required: true, allow_nil: false
-      param :description, String, desc: "Description of task", required: false
-      param :end_date_on, String, desc: "Date saved as String", allow_nil: true
-      param :user_id, Numeric, required: true, allow_nil: false
-    end
+    param :name, String,:action_aware => true, :desc => "Name of the task", required: true
+    param :description, String,:action_aware => true, desc: "Description of the task", required: true
+    param :end_date_on, String, :action_aware => true,desc: "End date for the task", required: false, allow_nil: false
+    param :user_id, Integer, :action_aware => true, desc: "Integer id of the user to whom the task belongs", required: true
   end
 
-  api!
-
+  api :GET, "/tasks", "Filter tasks"
+  param :user_id, Integer, :desc => "Id of a user by which tasks would be filtered", :required => false
+  param :created_after, String, :desc => "If supplied, only tasks created after this date would be returned", :required => false
+  param :search, String, :desc => "A search string which is used to perform full text search.The following operators are supported between words https://github.com/mrkamel/search_cop#supported-operators", :required => false
+  description "Get a list of tasks (optionally with some filter). Note only one filter parameter out of the following is supported per request."
+  formats ['json']
   def index
     if params[:user_id]
       render json: Task.author(params[:user_id])
@@ -39,7 +41,7 @@ class TasksController < ApplicationController
           render json: Task.search(params[:search]), content_type: "application/json"
         end
       rescue ActiveRecord::StatementInvalid => e
-        render json: { error: "Invalid Search Term"}, status: 422, content_type: "application/json"
+        render json: { error: "Invalid Search Term"}, status: 400, content_type: "application/json"
       end
     else
       render json: Task.all
@@ -47,38 +49,41 @@ class TasksController < ApplicationController
   end
 
 
-  api!
+  api :POST, "/tasks", "Create new task"
+  description "API to create a new task"
   param_group :task, as: :create
-
   def create
     task = Task.create(task_params)
     return render json: { errors: task.errors.messages }, status: 400 unless task.valid?
     render json: task
   end
 
-  # api :GET, '/tasks/:id', "Shows a single task"
-  # param :id, :numeric
-  # formats ['json']
-  api!
+  api :GET, '/tasks/:id', "Get a single task"
+  param :id, Integer, :desc => "Id of the task whose details are required"
+  formats ['json']
   def show
     render json: set_task
   end
 
   api :PUT, "/tasks/:id", "Update a task"
   param_group :task, as: :update
-
   def update
     set_task.update(task_params)
     return render json: { errors: task.errors.messages }, status: 400 unless task.valid?
     render json: { success: true }
   end
 
-  api!
+  api :DELETE, "/tasks/:id", "Delete a task"
+  param :id, Integer, :desc => "Id of the task to be deleted"
+  formats ['json']
   def destroy
     render json: { success: true } if set_task.destroy
   end
 
 
+  api :GET, "/autocomplete", "Autocomplete API"
+  param :search, String, :desc => "Search string for autocompletion"
+  formats ['json']
   def autocomplete
     begin
       query = params[:search].strip.remove_special_chars.split(" ").join(" OR ")
@@ -86,7 +91,7 @@ class TasksController < ApplicationController
 
       render json: Task.search(query)
     rescue ActiveRecord::StatementInvalid => e
-      render json: { error: "Invalid Search Term"}, status: 422, content_type: "application/json"
+      render json: { error: "Invalid Search Term"}, status: 400, content_type: "application/json"
     end
   end
 
