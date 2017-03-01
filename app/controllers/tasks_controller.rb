@@ -7,15 +7,15 @@ class TasksController < ApplicationController
     error 400, "Bad Request"
     error 404, "Not Found"
     error 500, "Internal Server Error"
-    meta :author => {:name => 'Neha', :surname => 'Tandon'}
+    meta :author => { :name => 'Neha', :surname => 'Tandon' }
   end
 
   def_param_group :task do
-    param :task, Hash,:action_aware => true, :desc => "Task information" do
-      param :name, String,:desc => "Name of Task", :required => true, :allow_nil => false
+    param :task, Hash, action_aware: true, desc: "Task information" do
+      param :name, String, :desc => "Name of Task", required: true, allow_nil: false
       param :description, String, desc: "Description of task", required: false
-      param :end_date_on, String,desc: "Date saved as String", :allow_nil => true
-      param :user_id, Numeric ,required: true, :allow_nil => false
+      param :end_date_on, String, desc: "Date saved as String", allow_nil: true
+      param :user_id, Numeric, required: true, allow_nil: false
     end
   end
 
@@ -27,7 +27,20 @@ class TasksController < ApplicationController
     elsif params[:created_after]
       render json: Task.tasks_after_date(params[:created_after])
     elsif params[:search]
-      render json: Task.search(params[:search])
+      begin
+        query = params[:search].strip.remove_special_chars.singularize_spaces
+        case query
+        when ""
+          render json: {error: "No Results Found" }
+        when query.include?("%")
+          binding.pry
+          render json: {error: "Invalid Request" }
+        else
+          render json: Task.search(params[:search]), content_type: "application/json"
+        end
+      rescue ActiveRecord::StatementInvalid => e
+        render json: { error: "Invalid Search Term"}, status: 422, content_type: "application/json"
+      end
     else
       render json: Task.all
     end
@@ -35,7 +48,7 @@ class TasksController < ApplicationController
 
 
   api!
-  param_group :task, :as => :create
+  param_group :task, as: :create
 
   def create
     task = Task.create(task_params)
@@ -52,7 +65,7 @@ class TasksController < ApplicationController
   end
 
   api :PUT, "/tasks/:id", "Update a task"
-  param_group :task, :as => :update
+  param_group :task, as: :update
 
   def update
     set_task.update(task_params)
@@ -63,6 +76,18 @@ class TasksController < ApplicationController
   api!
   def destroy
     render json: { success: true } if set_task.destroy
+  end
+
+
+  def autocomplete
+    begin
+      query = params[:search].strip.remove_special_chars.split(" ").join(" OR ")
+      query += "*"
+
+      render json: Task.search(query)
+    rescue ActiveRecord::StatementInvalid => e
+      render json: { error: "Invalid Search Term"}, status: 422, content_type: "application/json"
+    end
   end
 
   private
