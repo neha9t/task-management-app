@@ -1,24 +1,56 @@
-# README
+## Installation
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+These instructions will help setup the project locally.
 
-Things you may want to cover:
+1. Clone the repository
 
-* Ruby version
+`git clone https://github.com/neha9t/task-management-app`
 
-* System dependencies
+2. Follow the instructions [here](https://rvm.io/rvm/install) to install RVM. Make sure to source rvm as mentioned at the end of the installation instructions.
 
-* Configuration
+3. Install Ruby-2.4.0 using `rvm install ruby-2.4.0`
 
-* Database creation
+4. Install MySQL by doing
 
-* Database initialization
+For ubuntu
 
-* How to run the test suite
+You would be prompted to set a root password during the installation.
 
-* Services (job queues, cache servers, search engines, etc.)
+```
+sudo apt-get update
 
-* Deployment instructions
+sudo apt-get install mysql-server
 
-* ...
+sudo apt-get install libmysqlclient-dev
+
+sudo mysql_secure_installation
+
+```
+
+For Mac
+
+// TODO - Verify instructions on Mac.
+`brew install mysql`
+
+5. Install a Javascript runtime `sudo apt-get install nodejs`.
+
+6. Install bundler using `gem install bundler`.
+
+7. `cd` into the project directory and run `bundle install`.
+
+8. Setup the database and run migrations.
+
+* Go to config/database.yml and change your `username` and `password` to your MySQL credentials so that the app can access the database.
+
+* Run `rake db:create`.
+
+* Run `rake db:migrate`.
+
+For production run `RAILS_ENV=production rake db:create db:migrate`
+
+9. Finally run `rails s` and go to [http://localhost:3000](http://localhost:3000).
+
+## Running the tests
+
+10. Run : `bundle exec rspec`
+
