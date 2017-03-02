@@ -3,13 +3,9 @@ class TasksController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   before_action :find_task, only: [:show, :update, :destroy]
-  before_action :filter_task_by_after_date, only: [:index]
-  before_action :filter_by_author, only: [:index]
-  before_action :filter_task_before_end_date, only: [:index]
-  before_action :search_cop, only: [:index]
   formats [:json]
 
-  # APIPIE Related
+  # Apipie Related
   resource_description do
     short "APIs for managing Tasks"
     description "APIs for managing Tasks"
@@ -34,17 +30,24 @@ class TasksController < ApplicationController
   description "Get a list of tasks (optionally with some filter). Note only one filter parameter out of the following is supported per request."
   formats ['json']
 
-  # Controller:
-
   def index
     if params[:user_id]
-      render json: @filter_user
+      render json: Task.author(params[:user_id])
     elsif params[:created_after]
-      render json: @filter_after
+      render json: Task.tasks_after_date(params[:created_after])
     elsif params[:before_date]
-      render json: @filter_before
+      render json: Task.before_end_date(params[:before_date])
     elsif params[:search]
-      render json: @search_result
+      begin
+        query = params.strip.remove_special_chars.singularize_spaces
+        if query == ""
+          render json: {error: "No Results Found" }, status: 400
+        else
+          render json: Task.search(query)
+        end
+      rescue ActiveRecord::StatementInvalid => e
+        render json: { error: "Invalid Search Term"}, status: 400, content_type: "application/json"
+      end
     else
       render json: Task.all
     end
@@ -52,6 +55,7 @@ class TasksController < ApplicationController
 
   api :POST, "/tasks", "Create new task", desc: "API to create a new task"
   param_group :task, as: :create
+  formats ['json']
 
   def create
     task = Task.create(task_params)
@@ -69,6 +73,8 @@ class TasksController < ApplicationController
 
   api :PUT, "/tasks/:id", "Update a task"
   param_group :task, as: :update
+  formats ['json']
+
 
   def update
     @task.update(task_params)
@@ -92,7 +98,6 @@ class TasksController < ApplicationController
     begin
       query = params[:search].strip.remove_special_chars.split(" ").join(" OR ")
       query += "*"
-
       render json: Task.search(query)
     rescue ActiveRecord::StatementInvalid => e
       render json: { error: "Invalid Search Term"}, status: 400, content_type: "application/json"
@@ -107,34 +112,5 @@ class TasksController < ApplicationController
 
   def task_params
     params.require(:task).permit(:name, :description, :end_date_on, :user_id)
-  end
-
-  def filter_task_by_after_date
-    @filter_after= Task.tasks_after_date(params[:created_after])
-  end
-
-  def filter_by_author
-    @filter_user = Task.author(params[:user_id])
-  end
-
-  def filter_task_before_end_date
-    @filter_before = Task.before_end_date(params[:before_date])
-  end
-
-  def search_cop
-    @search_result = full_text_search(params[:search])
-  end
-
-  def full_text_search(params)
-    begin
-      query = params.strip.remove_special_chars.singularize_spaces
-      if query == ""
-        {error: "No Results Found" }
-      else
-        Task.search(query) # search_cop method: search
-      end
-    rescue ActiveRecord::StatementInvalid => e
-      render json: { error: "Invalid Search Term"}, status: 400, content_type: "application/json"
-    end
   end
 end

@@ -5,7 +5,7 @@ development:
   database: task-management_mysql_development
   pool: 5
   username: root
-  password: 123456
+  password: 12345
   host: localhost
 
 test:
@@ -14,8 +14,8 @@ test:
   reconnect: false
   database: task-management_mysql_test
   pool: 5
-  username:
-  password:
+  username: root
+  password: 12345
   host: localhost
 
 production:
@@ -24,6 +24,6 @@ production:
   reconnect: false
   database: task-management_mysql_production
   pool: 5
-  username:
-  password:
-  socket: 127.0.0.1
+  username: root
+  password: 12345
+  host: localhost

@@ -13,7 +13,7 @@ def verify_task(task)
   expect(task["user_id"]).to eq(1)
 end
 
-Rspec.describe TasksController, type: :controller do
+RSpec.describe TasksController, type: :controller do
   describe "POST #create" do
     context 'with invalid attributes' do
       before(:each) do
@@ -121,15 +121,14 @@ Rspec.describe TasksController, type: :controller do
 
     context 'with valid id' do
       before(:each) do
-        Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
-        get :show, params: { id: 1 }
+        task = Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
+        get :show, params: { id: task.id }
       end
 
       it "responds with 200 HTTP Code" do
         body = JSON.parse(response.body)
         expect(response.code).to eql("200")
         verify_task(body)
-        # TODO: Response structure
       end
     end
   end
@@ -137,11 +136,11 @@ Rspec.describe TasksController, type: :controller do
   describe "PUT #update" do
     context "with invalid attributes" do
       before(:each) do
-        Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
+        @task = Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
       end
       it "responds with error message" do
         @request.env["CONTENT_TYPE"] = "application/json"
-        put :update, params: { id: 1, name: "", description: "D1", end_date_on: "w", user_id: "" }
+        put :update, params: { id: @task.id, name: "", description: "D1", end_date_on: "w", user_id: "" }
         body = JSON.parse(response.body)
         expect(response.code).to eql("400")
         expect(body["errors"]["end_date_on"]).to match_array(["is not a valid date"])
@@ -156,13 +155,12 @@ Rspec.describe TasksController, type: :controller do
       end
       it "responds with 200 OK" do
         @request.env["CONTENT_TYPE"] = "application/json"
-        params = { id: 1, name: "Ch N1", description: "D1", end_date_on: "2017-02-03", user_id: 1 }
+        params = { id: @task.id, name: "Ch N1", description: "D1", end_date_on: "2017-02-03", user_id: 1 }
         put :update, params: params
         @task.reload
         body = JSON.parse(response.body)
-        puts body
         expect(response.code).to eql("200")
-        expect(@task.name).to eql("Change N1")
+        expect(@task.name).to eql("Ch N1")
       end
     end
   end
@@ -173,7 +171,6 @@ Rspec.describe TasksController, type: :controller do
         @task = Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
         delete :destroy, params: { id: @task.id }
         body = JSON.parse(response.body)
-        puts body
         expect(response.code).to eql("200")
       end
     end
