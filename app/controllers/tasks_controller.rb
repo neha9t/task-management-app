@@ -39,7 +39,7 @@ class TasksController < ApplicationController
       render json: Task.before_end_date(params[:before_date])
     elsif params[:search]
       begin
-        query = params.strip.remove_special_chars.singularize_spaces
+        query = params[:search].strip.remove_special_chars.singularize_spaces
         if query == ""
           render json: {error: "No Results Found" }, status: 400
         else
