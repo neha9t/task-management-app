@@ -51,3 +51,6 @@ For production run `RAILS_ENV=production rake db:create db:migrate`
 9. Finally run `rails s` and go to [http://localhost:3000](http://localhost:3000).
 
 ## Running the tests
+
+10. Run : `bundle exec rspec`
+
