@@ -1,29 +1,30 @@
 require 'rails_helper'
 
 RSpec.describe Task, :type => :model do
-  subject {
-  described_class.new(name: "Anything", description: "Lorem ipsum", end_date_on: DateTime.now + 1.week, user_id: 1)}
-  it "is valid with valid attributes" do
-    expect(subject).to be_valid
+
+  context "when built with name nil" do
+    let(:task) { build :task, name: nil }
+    it  {should_not be_valid}
   end
 
-  it "is not valid without a name" do
-    subject.name = nil
-    expect(subject).to_not be_valid
+  context "when built with user_id nil" do
+    let(:task) { build :task, user_id: nil }
+    it {should_not be_valid}
   end
 
-  it "is not valid without a use_id" do
-    subject.user_id = nil
-    expect(subject).to_not be_valid
+  context "when built when invalid end_date_on" do
+    let(:task) { build :task, end_date_on: "20" }
+    it {should_not be_valid}
+  end
+  context "when built with non-integer user_id" do
+    let(:task) { build :task, user_id: "wee" }
+    it {should_not be_valid}
+  end
+  context "" do
+    let(:task) { build :task}
+    it "has a valid factory" do
+      expect(task).to be_valid
+    end
   end
 
-  it "is not valid with a end_date" do
-    subject.end_date_on = "12"
-    expect(task).to_not be_valid
-  end
-
-  it "is not valid with non-integer user_id" do
-    subject.user_id = "qw"
-    expect(subject).to_not be_valid
-  end
 end
