@@ -17,16 +17,16 @@ class TasksController < ApplicationController
   end
 
   def_param_group :task do
-    param :name, String,:action_aware => true, :desc => "Name of the task", required: true
-    param :description, String,:action_aware => true, desc: "Description of the task", required: true
-    param :end_date_on, String, :action_aware => true,desc: "End date for the task", required: false, allow_nil: false
-    param :user_id, Integer, :action_aware => true, desc: "Integer id of the user to whom the task belongs", required: true
+    param :name, String,action_aware: true, :desc => "Name of the task", required: true
+    param :description, String,action_aware: true, desc: "Description of the task", required: false
+    param :end_date_on, String, action_aware: true,desc: "End date for the task", required: false, allow_nil: false
+    param :user_id, Integer, action_aware: true, desc: "Integer id of the user to whom the task belongs", required: true
   end
 
   api :GET, "/tasks", "Filter tasks"
   param :user_id, Integer, desc: "Id of a user by which tasks would be filtered", required: false
   param :created_after, String, desc: "If supplied, only tasks created after this date would be returned", required: false
-  param :search, String, :desc => "A search string which is used to perform full text search.The following operators are supported between words https://github.com/mrkamel/search_cop#supported-operators", required: false
+  param :search, String, desc: "A search string which is used to perform full text search.The following operators are supported between words https://github.com/mrkamel/search_cop#supported-operators", required: false
   description "Get a list of tasks (optionally with some filter). Note only one filter parameter out of the following is supported per request."
   formats ['json']
 
@@ -41,7 +41,7 @@ class TasksController < ApplicationController
       begin
         query = params[:search].strip.remove_special_chars.singularize_spaces
         if query == ""
-          render json: {error: "No Results Found" }, status: 400
+          render json: {error: "No Results Found" }, status: 422
         else
           render json: Task.search(query)
         end
@@ -64,7 +64,7 @@ class TasksController < ApplicationController
   end
 
   api :GET, '/tasks/:id', "Get a single task"
-  param :id, Integer, desc: "Id of the task whose details are required"
+  param :id, Integer, desc: "Id of the task whose details are required", required: true
   formats ['json']
 
   def show
@@ -83,7 +83,7 @@ class TasksController < ApplicationController
   end
 
   api :DELETE, "/tasks/:id", "Delete a task"
-  param :id, Integer, :desc => "Id of the task to be deleted"
+  param :id, Integer, :desc => "Id of the task to be deleted", required: true
   formats ['json']
 
   def destroy
@@ -91,7 +91,7 @@ class TasksController < ApplicationController
   end
 
   api :GET, "/autocomplete", "Autocomplete API"
-  param :search, String, :desc => "Search string for autocompletion"
+  param :search, String, :desc => "Search string for autocompletion", required: true
   formats ['json']
 
   def autocomplete
