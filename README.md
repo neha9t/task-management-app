@@ -58,5 +58,9 @@ For production run `RAILS_ENV=production rake db:create db:migrate`
 
 ## Running the tests
 
-10. Run : `bundle exec rspec`
+10.Run : `rake spec` to run model and controller tests
+
+11.Run : `bundle exec rspec` to run controller tests
+
+12. For specific tests, run : `bundle exec rspec ./spec/controllers/task_controller_spec.rb:<line-number>`
 
