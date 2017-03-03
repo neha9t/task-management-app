@@ -18,6 +18,7 @@ group :development, :test do
   gem 'rspec-rails', '~> 3.5'
   gem 'factory_girl_rails'
   gem 'rails-controller-testing'
+  gem 'faker', '~> 1.7', '>= 1.7.3'
 end
 
 group :development do
