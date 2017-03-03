@@ -101,7 +101,60 @@ RSpec.describe TasksController, type: :controller do
         expect(body.length).to eql(0)
       end
     end
-    # TODO: Add third Filter Test cases
+
+    context "when applied before_end_date a given date filter on tasks" do
+      before(:each) do
+        Task.create(name: "N1", description: "D1", end_date_on: "2017-02-25", user_id: 1)
+        Task.create(name: "N2", description: "D2", end_date_on: "2017-02-21", user_id: 2)
+        Task.create(name: "N2", description: "D2", end_date_on: "2017-02-21", user_id: 2)
+        get :index, params: { before_date: "2017-02-23" }
+      end
+      it "should return 2 task" do
+        body = JSON.parse(response.body)
+        expect(body.length).to eql(2)
+      end
+    end
+
+    context "when applied full text search filter on tasks" do
+      before(:each) do
+        Task.create(name: "NEHA", description: "D1", end_date_on: "2017-02-25", user_id: 1)
+        Task.create(name: "NEHAT", description: "D2", end_date_on: "2017-02-21", user_id: 2)
+        Task.create(name: "NEHAM", description: "D2", end_date_on: "2017-02-21", user_id: 2)
+
+      end
+      it "will generate error" do
+        get :index, params: { search: "" }
+        body = JSON.parse(response.body)
+        expect(body["error"]).to eql("No Results Found")
+      end
+
+      it "will generate error" do
+        get :index, params: { search: "&()(" }
+        body = JSON.parse(response.body)
+        expect(body["error"]).to eql("No Results Found") # as search term with every special character is internally converted to ""
+      end
+
+      it "will generate error" do
+        get :index, params: { search: "NEHA(&^%" }
+        body = JSON.parse(response.body)
+        # as search term with every a combination of Letters-special chars
+        # is internally converted to first encounter of letter and ditching everything after that
+        expect(body.length).to eql(1)
+      end
+
+      it "will generate records starting with " do
+        get :index, params: { search: "NEHA" }
+        body = JSON.parse(response.body)
+        expect(body.length).to eql(1)
+      end
+
+      it "will generate error" do
+        get :index, params: { search: nil }
+        body = JSON.parse(response.body)
+        expect(body["error"]).to eql("No Results Found")
+      end
+    end
+
   end
 
   describe "GET #show" do
@@ -182,5 +235,26 @@ RSpec.describe TasksController, type: :controller do
         expect(response.code).to eql("404")
       end
     end
+  end
+
+  describe "GET #autocomplete" do
+    context "with valid attributes" do
+      before(:each) do
+        Task.create(name: "NEHAT", description: "D1", end_date_on: "2017-02-25", user_id: 1)
+        Task.create(name: "NEHAM", description: "D1", end_date_on: "2017-02-25", user_id: 1)
+      end
+      it "responds with autosuggestions" do
+        get :autocomplete, params: { search: "NEH" } # concatenate * on its own
+        body = JSON.parse(response.body)
+        expect(body.length).to eql(2)
+      end
+
+      it "will generate error" do
+        get :autocomplete, params: { search: "*" }
+        body = JSON.parse(response.body)
+        expect(body["error"]).to eql("Invalid Search Term")
+      end
+    end
+
   end
 end
