@@ -1,8 +1,18 @@
+## Project Features
+
+1. CRUD Operations
+2. Filters
+3. Full-Text Search
+4. Autocomplete functionality
+
+
 ## Trying out the project
 
 I have hosted the latest code on an Vultr instance. You can import the Postman collection (by clicking the button below) into the Postman app to try out the API's without any installation.
 
+
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/18bec1f50acb14a5b4f8)
+
 
 ## Installation
 
