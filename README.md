@@ -11,7 +11,7 @@
 I have hosted the latest code on an Vultr instance. You can import the Postman collection (by clicking the button below) into the Postman app to try out the API's without any installation.
 
 
-[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/18bec1f50acb14a5b4f8)
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://www.getpostman.com/collections/4213c209f67bafb06467)
 
 
 ## Installation
