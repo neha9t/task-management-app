@@ -3,9 +3,9 @@ default: &default
   encoding: utf8
   pool: 5
   reconnect: false
-  host: <%=  ENV['MYSQL_CHAT_HOST'] || 'localhost' %>
+  host: <%=  ENV['MYSQL_HOST'] || db %>
   username: <%= ENV['MYSQL_USER'] || 'root' %>
-  password: <%= ENV['MYSQL_PASSWROD'] || '12345' %>
+  password: <%= ENV['MYSQL_PASSWROD'] || '' %>
 
 development:
   <<: *default
